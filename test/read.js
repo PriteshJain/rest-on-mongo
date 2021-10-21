@@ -102,7 +102,7 @@ describe('Read tests', () => {
     expect(result.deletedCount).to.equal(docs.length);
   });
 
-  it('should get many filtered by mongo filter)', async () => {
+  it('should get many filtered by mongo filter', async () => {
     // Prepare - intentionally create a number value as a string
     const numString = '123456';
     const docs = [
@@ -121,5 +121,20 @@ describe('Read tests', () => {
     // Cleanup
     const result = await db.collection(collection).deleteMany({});
     expect(result.deletedCount).to.equal(docs.length);
+  });
+
+  it('should get one filtered by mongo filter - object ID', async () => {
+    // Prepare - intentionally create a number value as a string
+    const doc = { testNumber: 2.1, name: 'auto id' };
+    const { insertedId } = await db.collection(collection).insertOne(doc);
+    // Do
+    const res = await request(app)
+      .get(`/${collection}`)
+      .query({ __filter: `{"_id":{"$oid": "${insertedId}"}}` });
+    expect(res.statusCode).to.equal(200);
+    expect(res.body[0].name).to.equal(doc.name);
+    // Cleanup
+    const result = await db.collection(collection).deleteOne({ _id: insertedId });
+    expect(result.deletedCount).to.equal(1);
   });
 });
